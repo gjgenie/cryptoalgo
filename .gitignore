@@ -216,9 +216,8 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# GJ Investment Academy private source data and local artifacts
+# Keep the raw TradingView export private; publish the generated dashboard data.
 data/priceaction.csv
-output/dashboard_data.json
 .DS_Store
 
 # Streamlit
