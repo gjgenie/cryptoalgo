@@ -1,10 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 78" role="img" aria-labelledby="title">
   <title id="title">SHARK EXCHANGE</title>
-  <g fill="#f5f7fa" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="42" letter-spacing="2">
-    <text x="8" y="43">SH</text>
-    <text x="119" y="43">RK</text>
+  <g fill="#f5f7fa" font-family="Arial, Helvetica, sans-serif" font-size="51" font-weight="800">
+    <text x="0" y="48" textLength="82" lengthAdjust="spacingAndGlyphs">SH</text>
+    <text x="146" y="48" textLength="82" lengthAdjust="spacingAndGlyphs">RK</text>
   </g>
-  <path fill="#33c5e8" d="M69 42 91 2l23 40h-13L91 17 82 42z"/>
-  <path fill="#33c5e8" d="M76 43h32l-5 5H81z"/>
-  <text x="9" y="72" fill="#31c6e8" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="500" letter-spacing="4">EXCHANGE</text>
+  <g fill="#33c5e8">
+    <path d="M82 47 106 1l29 46h-15l-14-26-13 26z"/>
+    <path d="m94 49 13-8 20 2 8 6-8 4h-26z"/>
+    <path d="m119 30 14 12-5 4-12-8z"/>
+  </g>
+  <text x="6" y="75" fill="#31c6e8" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="500" letter-spacing="4" textLength="218" lengthAdjust="spacing">EXCHANGE</text>
 </svg>
