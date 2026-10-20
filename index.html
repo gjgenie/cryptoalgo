@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#06131d"><title>GJ Investment Academy | Performance</title>
-  <link rel="stylesheet" href="./static/style.css?v=20261020-6">
+  <link rel="stylesheet" href="./static/style.css?v=20261020-23">
 </head>
 <body>
   <div class="shell">
@@ -19,12 +19,11 @@
             <span class="strategy-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="29" cy="35" r="20"/><circle cx="29" cy="35" r="12"/><circle cx="29" cy="35" r="4"/><path d="M28 36 51 13m-12 0h12v12"/></svg></span>
             <div class="strategy-copy"><div class="eyebrow">STRATEGY PERFORMANCE</div><h1>Price Action Strategy</h1><div class="strategy-tags"><span>CRYPTO</span><span>INTRADAY</span><span>5m</span></div><div class="collapsed-summary" id="collapsed-summary"><span>Selected period P&amp;L <strong id="collapsed-pnl">—</strong></span><span>Win rate <strong id="collapsed-win">—</strong></span></div></div>
           </div>
-          <div class="hero-heading-actions"><span class="status"><i></i> Historical</span><button class="collapse-toggle" id="hero-toggle" type="button" aria-expanded="true" aria-controls="dashboard-details" aria-label="Collapse strategy details"><span aria-hidden="true">⌃</span></button></div>
+          <div class="hero-heading-actions"><span class="status"><i></i> Active</span><button class="collapse-toggle" id="hero-toggle" type="button" aria-expanded="true" aria-controls="dashboard-details" aria-label="Collapse strategy details"><span aria-hidden="true">⌃</span></button></div>
         </div>
       </section>
       <div class="dashboard-details" id="dashboard-details">
       <div class="hero-details">
-        <p class="muted coverage-note" id="coverage">Loading real trade history…</p>
         <div class="hero-stats">
           <div class="hero-pnl"><span class="label" id="hero-pnl-label">Last 7 Days P&amp;L</span><strong id="hero-pnl">—</strong></div>
           <div><span class="label">Win rate</span><strong id="hero-win">—</strong></div>
@@ -38,7 +37,7 @@
       <section class="metrics" id="metrics"></section>
       <section class="panel chart-panel"><div class="section-head"><div><div class="eyebrow">EQUITY CURVE</div><h2>Cumulative realized P&amp;L</h2></div><span class="chart-unit">USD</span></div><div id="chart" class="chart"></div></section>
       <section class="panel table-panel"><div class="section-head table-heading"><div><div class="eyebrow">TRADE HISTORY</div><h2>Historical trades</h2><p class="muted" id="match-count"></p></div><input id="search" class="search" type="search" placeholder="Search trades…" aria-label="Search trades"></div>
-        <div class="table-wrap"><table><thead><tr><th data-sort="trade_number">Trade #</th><th data-sort="entry_time">Entry</th><th data-sort="exit_time">Exit</th><th data-sort="direction">Side</th><th data-sort="entry_price">Entry price</th><th data-sort="exit_price">Exit price</th><th data-sort="quantity">Qty</th><th data-sort="net_pnl">Net P&amp;L</th><th data-sort="return_pct">Return</th><th data-sort="commission">Commission</th><th data-sort="duration_bars">Duration</th></tr></thead><tbody id="trade-rows"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>SL No</th><th data-sort="entry_time">Entry</th><th data-sort="exit_time">Exit</th><th data-sort="direction">Side</th><th data-sort="entry_price">Entry price</th><th data-sort="exit_price">Exit price</th><th data-sort="quantity">Qty</th><th data-sort="net_pnl">Net P&amp;L</th></tr></thead><tbody id="trade-rows"></tbody></table></div>
         <div class="pagination"><label>Rows <select id="page-size"><option>10</option><option>25</option><option>50</option></select></label><div><button id="prev">←</button><span id="page-label">1 / 1</span><button id="next">→</button></div></div>
       </section>
       <section class="contact-actions" id="contact-actions" aria-label="Contact and account links"></section>
@@ -47,5 +46,5 @@
     </main>
     <footer><div class="footer-brand">GJ INVESTMENT <b>ACADEMY</b></div><nav id="social-links" aria-label="Social media"></nav><p>Trading involves risk. Past performance does not guarantee future results. Historical results shown on this dashboard are not a guarantee of future performance and should not be considered financial advice.</p></footer>
   </div>
-  <script src="./static/app.js?v=20261020-6" defer></script>
+  <script src="./static/app.js?v=20261020-19" defer></script>
 </body></html>
