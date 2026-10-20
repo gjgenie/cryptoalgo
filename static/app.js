@@ -5,11 +5,11 @@ const SITE_CONFIG = {
   telegramUrl: "https://t.me/gjinvestmentacademy1",
   youtubeUrl: "https://www.youtube.com/@alisirtrade?sub_confirmation=1"
 };
-
 const $ = (selector) => document.querySelector(selector);
 const usd = (value) => value == null ? "N/A" : new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", minimumFractionDigits: Number.isInteger(value) ? 0 : 2, maximumFractionDigits: 2 }).format(value).replace("US$", "US $");
 const pct = (value) => value == null ? "N/A" : `${value.toFixed(2)}%`;
 let allTrades = [], filtered = [], sortKey = "exit_time", sortDirection = -1, page = 1, pageSize = 10;
+let csvDefaultCapitalUsd = null, selectedCapitalOption = "csv";
 
 function link(url, label, extra = "") {
   if (extra === "contact") {
@@ -18,7 +18,7 @@ function link(url, label, extra = "") {
     return `<a class="link-button contact" href="${url}" target="_blank" rel="noopener noreferrer">${body}</a>`;
   }
   if (!url) return `<span class="link-button ${extra} placeholder" title="Add this URL in SITE_CONFIG in static/app.js">${label}<small>URL needed</small></span>`;
-  if (extra === "secondary") return `<a class="link-button ${extra} shark-header-link" href="${url}" target="_blank" rel="noopener noreferrer" aria-label="Open SHARK Exchange account" title="Open SHARK Exchange account"><img src="./static/shark-exchange.svg?v=2" alt="SHARK EXCHANGE"></a>`;
+  if (extra === "secondary") return `<a class="link-button ${extra} shark-header-link" href="${url}" target="_blank" rel="noopener noreferrer" aria-label="Open account, get free ALGO" title="Open account, get free ALGO"><img src="./static/shark-exchange.svg?v=2" alt="SHARK EXCHANGE"><span class="shark-header-copy"><b>Open account</b><small>get free ALGO</small></span><span class="action-arrow" aria-hidden="true">›</span></a>`;
   return `<a class="link-button ${extra}" href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
 }
 function parseDate(value) { return new Date(value.length === 16 ? `${value}:00` : value); }
@@ -35,14 +35,24 @@ function metrics(trades) {
 }
 function renderMetrics(trades) {
   const m = metrics(trades);
+  const capitalUsed = selectedCapitalOption === "csv" ? csvDefaultCapitalUsd : Number(selectedCapitalOption);
+  const capitalScale = capitalUsed > 0 && csvDefaultCapitalUsd > 0 ? capitalUsed / csvDefaultCapitalUsd : 1;
+  const summaryNet = m.net * capitalScale;
+  const returnOnCapital = capitalUsed > 0 ? 100 * summaryNet / capitalUsed : null;
   $("#hero-pnl").textContent = usd(m.net); $("#hero-pnl").className = m.net >= 0 ? "positive" : "negative";
   $("#hero-win").textContent = pct(m.winRate); $("#hero-dd").textContent = usd(m.dd);
   $("#collapsed-pnl").textContent = usd(m.net); $("#collapsed-pnl").className = m.net >= 0 ? "positive" : "negative";
   $("#collapsed-win").textContent = pct(m.winRate);
-  const cards = [["Net P&L (USD)",usd(m.net),"Realized on completed trades"],["Total trades",m.count,"Completed trades"],
+  const capitalOptions = [["csv",usd(csvDefaultCapitalUsd)],["1000",usd(1000)],["1500",usd(1500)],["2000",usd(2000)],["5000",usd(5000)],["10000",usd(10000)]];
+  const capitalSelect = `<select id="capital-used-select" class="capital-select" aria-label="Capital used for return calculation">${capitalOptions.map(([value,label]) => `<option value="${value}"${String(selectedCapitalOption) === value ? " selected" : ""}>${label}</option>`).join("")}</select>`;
+  const cards = [["Net P&L (USD)",usd(summaryNet),"Estimated P&L scaled to selected capital"],["Total trades",m.count,"Completed trades"],
     ["Winning trades",m.wins,"Positive net P&L"],["Losing trades",m.losses,"Negative net P&L"],
-    ["Win rate",pct(m.winRate),"Includes breakeven trades in denominator"],["Profit factor",m.factor == null ? "N/A" : m.factor.toFixed(2),m.factor == null ? "No gross losses in this period" : "Gross profit ÷ gross losses"]];
-  $("#metrics").innerHTML = cards.map(([name,value,note]) => `<article class="metric"><span>${name}</span><strong class="${name.includes("P&L") && m.net < 0 ? "negative" : ""}">${value}</strong><small>${note}</small></article>`).join("");
+    ["Win rate",pct(m.winRate),"Includes breakeven trades in denominator"],["Profit factor",m.factor == null ? "N/A" : m.factor.toFixed(2),m.factor == null ? "No gross losses in this period" : "Gross profit ÷ gross losses"],
+    ["Capital Used (USD)",capitalSelect,""],
+    ["Return on Capital",pct(returnOnCapital),`Scaled Net P&L ÷ ${usd(capitalUsed)}`]];
+  $("#metrics").innerHTML = cards.map(([name,value,note]) => name === "Capital Used (USD)"
+    ? `<article class="metric"><span>${name}</span>${value}${note ? `<small>${note}</small>` : ""}</article>`
+    : `<article class="metric"><span>${name}</span><strong class="${name.includes("P&L") && m.net < 0 ? "negative" : ""}">${value}</strong><small>${note}</small></article>`).join("");
 }
 function renderChart(trades) {
   const el = $("#chart");
@@ -83,15 +93,18 @@ function applyRange(days, custom=false) {
   renderMetrics(filtered); renderChart(filtered); renderTable();
 }
 async function init() {
-  $("#contact-links").innerHTML=link(SITE_CONFIG.whatsappUrl,"WhatsApp","contact")+link(SITE_CONFIG.sharkExchangeUrl,"Open account","secondary");
-  const whatsappIcon=`<svg class="whatsapp-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4a19 19 0 0 0-16.2 28.9L5 43l10.4-2.7A19 19 0 1 0 24 4Zm0 34.5a15.4 15.4 0 0 1-7.9-2.2l-.6-.4-6.2 1.6 1.7-6-.4-.6A15.5 15.5 0 1 1 24 38.5Zm8.5-11.6c-.5-.3-2.8-1.4-3.2-1.5-.4-.2-.8-.3-1.1.3-.3.5-1.2 1.5-1.5 1.8-.3.3-.6.4-1.1.1-.5-.3-2-.7-3.8-2.3-1.4-1.2-2.3-2.7-2.6-3.2-.3-.5 0-.8.2-1 .2-.2.5-.6.8-.9.2-.3.3-.5.5-.8.2-.3.1-.6 0-.9-.1-.3-1.1-2.6-1.5-3.5-.4-.9-.8-.8-1.1-.8h-1c-.3 0-.9.1-1.3.6-.4.5-1.7 1.7-1.7 4.1s1.8 4.7 2 5c.2.3 3.5 5.4 8.5 7.5 1.2.5 2.1.8 2.8 1 1.2.4 2.3.3 3.1.2 1-.1 2.8-1.2 3.2-2.3.4-1.1.4-2.1.3-2.3-.1-.2-.4-.3-.9-.6Z"/></svg>`;
-  $("#contact-actions").innerHTML=`<a class="contact-card" href="${SITE_CONFIG.whatsappUrl}" target="_blank" rel="noopener noreferrer">${whatsappIcon}<span><b>Chat on WhatsApp</b></span></a><a class="contact-card shark-action" href="${SITE_CONFIG.sharkExchangeUrl}" target="_blank" rel="noopener noreferrer"><img class="shark-logo" src="./static/shark-exchange.svg?v=2" alt="SHARK EXCHANGE"><span class="action-arrow">›</span></a>`;
+  $("#contact-links").innerHTML=link(SITE_CONFIG.sharkExchangeUrl,"Open account","secondary");
+  $("#metrics").addEventListener("change",event=>{if(event.target.id==="capital-used-select"){selectedCapitalOption=event.target.value;renderMetrics(filtered);}});
+  const whatsappIcon=`<svg class="whatsapp-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4a19 19 0 0 0-16.2 28.9L5 43l10.4-2.7A19 19 0 1 0 24 4Zm0 34.5a15.4 15.4 0 0 1-7.9-2.2l-.6-.4-6.2 1.6 1.7-6-.4-.6A15.5 15.5 0 1 1 24 38.5Zm8.5-11.6c-.5-.3-2.8-1.4-3.2-1.5-.4-.2-.8-.3-1.1.3-.3.5-1.2 1.5-1.5 1.8-.3.3-.6.4-1.1.1-.5-.3-2-.7-3.8-2.3-1.4-1.2-2.3-2.7-2.6-3.2-.3-.5 0-.8.2-1 .2-.2.5-.6.8-.9.2-.3.3-.5.5-.8.2-.2.1-.6 0-.9-.1-.3-1.1-2.6-1.5-3.5-.4-.9-.8-.8-1.1-.8h-1c-.3 0-.9.1-1.3.6-.4.5-1.7 1.7-1.7 4.1s1.8 4.7 2 5c.2.3 3.5 5.4 8.5 7.5 1.2.5 2.1.8 2.8 1 1.2.4 2.3.3 3.1.2 1-.1 2.8-1.2 3.2-2.3.4-1.1.4-2.1.3-2.3-.1-.2-.4-.3-.9-.6Z"/></svg>`;
+  document.body.insertAdjacentHTML("beforeend",`<a class="floating-whatsapp" href="${SITE_CONFIG.whatsappUrl}" target="_blank" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp" title="Chat with us on WhatsApp">${whatsappIcon}</a>`);
+  $("#contact-actions").innerHTML=`<a class="contact-card shark-action" href="${SITE_CONFIG.sharkExchangeUrl}" target="_blank" rel="noopener noreferrer"><img class="shark-logo" src="./static/shark-exchange.svg?v=2" alt="SHARK EXCHANGE"><span class="shark-action-copy"><b>Open account</b><small>get free ALGO</small></span><span class="action-arrow">›</span></a>`;
   $("#social-links").innerHTML=`<a class="social-card" href="${SITE_CONFIG.youtubeUrl}" target="_blank" rel="noopener noreferrer"><span class="social-icon youtube-icon"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="3" y="3" width="42" height="42" rx="10"/><path d="M38 17.2a4.5 4.5 0 0 0-3.2-3.2C32 13.2 24 13.2 24 13.2s-8 0-10.8.8a4.5 4.5 0 0 0-3.2 3.2 46 46 0 0 0-.8 6.8 46 46 0 0 0 .8 6.8 4.5 4.5 0 0 0 3.2 3.2c2.8.8 10.8.8 10.8.8s8 0 10.8-.8a4.5 4.5 0 0 0 3.2-3.2 46 46 0 0 0 .8-6.8 46 46 0 0 0-.8-6.8ZM21 29.5v-11l9.5 5.5-9.5 5.5Z"/></svg></span><span class="social-copy"><b>YouTube</b><small>Strategy Videos</small></span><svg class="external-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg></a><a class="social-card" href="${SITE_CONFIG.telegramUrl}" target="_blank" rel="noopener noreferrer"><span class="social-icon telegram-icon"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="3" y="3" width="42" height="42" rx="10"/><path d="m11 22 25-10c1.2-.5 2.3.3 1.9 1.8l-4.3 21c-.3 1.5-1.2 1.8-2.5 1l-7-5.2-3.4 3.3c-.5.5-.9.9-1.8.9l.5-7.1 13-11.7c.6-.5-.1-.8-.9-.3L15.5 26.2l-6.8-2.1c-1.5-.5-1.5-1.5 2.3-3.1Z"/></svg></span><span class="social-copy"><b>Telegram</b><small>Updates &amp; Alerts</small></span><svg class="external-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg></a>`;
   try {
     const response=await fetch("./output/dashboard_data.json"); if(!response.ok) throw new Error(`HTTP ${response.status}`);
     const data=await response.json();
     if (!Array.isArray(data.completed_trades) || !data.validation || !data.coverage) throw new Error("Dashboard JSON is missing required fields.");
     allTrades=data.completed_trades;
+    csvDefaultCapitalUsd=allTrades.length?Math.max(...allTrades.map(t=>Math.abs(Number(t.entry_price)*Number(t.quantity)))):null;
     $("#generated").textContent=`Updated ${new Date(data.generated_at).toLocaleString()}`;
     $("#filters button[data-range='7']").classList.add("active"); applyRange(7);
   } catch(error) { $("#error").hidden=false; $("#error").textContent=`Dashboard data could not be loaded. Generate output/dashboard_data.json with “python3 process_trades.py” and serve the project over HTTP. (${error.message})`; }
