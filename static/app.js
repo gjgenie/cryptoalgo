@@ -58,11 +58,17 @@ function renderChart(trades) {
   const el = $("#chart");
   if (!trades.length) { el.innerHTML = '<div class="empty">No completed trades in this date range.</div>'; $("#spark").innerHTML = ""; return; }
   let total = 0; const points = [{ trade: null, value: 0 }, ...trades.map(t => ({ trade:t, value:(total += Number(t.net_pnl)) }))];
-  const width=900,height=230,left=58,right=12,top=15,bottom=27,vals=points.map(p=>p.value),min=Math.min(0,...vals),max=Math.max(0,...vals),span=max-min||1;
+  const width=Math.max(320,el.clientWidth||900),height=250,left=68,right=18,top=22,bottom=34,vals=points.map(p=>p.value),min=Math.min(0,...vals),max=Math.max(0,...vals),span=max-min||1;
   const x=i=>left+i*(width-left-right)/(points.length-1||1), y=v=>top+(max-v)*(height-top-bottom)/span;
-  const coords=points.map((p,i)=>`${x(i)},${y(p.value)}`).join(" ");
-  const zero=y(0), ticks=[min,(min+max)/2,max];
-  el.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Cumulative realized profit and loss"><defs><linearGradient id="equity-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#13d6a0" stop-opacity=".22"/><stop offset="1" stop-color="#13d6a0" stop-opacity="0"/></linearGradient></defs><line x1="${left}" y1="${zero}" x2="${width-right}" y2="${zero}" stroke="#345262" stroke-dasharray="4 5"/>${ticks.map(v=>`<text x="${left-8}" y="${y(v)+4}" text-anchor="end">${Math.round(v).toLocaleString()}</text>`).join("")}<polygon points="${left},${zero} ${coords} ${x(points.length-1)},${zero}" fill="url(#equity-fill)"/><polyline points="${coords}" fill="none" stroke="#13d6a0" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${points.filter(p=>p.trade).map((p,i)=>`<circle cx="${x(i+1)}" cy="${y(p.value)}" r="4" fill="#13d6a0"><title>${fmtDate(p.trade.exit_time)} · ${usd(p.value)} cumulative</title></circle>`).join("")}<text x="${left}" y="${height-5}">${fmtDate(trades[0].exit_time).split(",")[0]}</text><text x="${width-right}" y="${height-5}" text-anchor="end">${fmtDate(trades.at(-1).exit_time).split(",")[0]}</text></svg>`;
+  const zero=y(0), last=points.length-1;
+  const ticks=Array.from({length:5},(_,i)=>min+(max-min)*i/4);
+  const slotWidth=(width-left-right)/Math.max(1,trades.length),barWidth=Math.max(2,Math.min(18,slotWidth*.68));
+  const bars=trades.map((trade,index)=>{
+    const point=points[index+1],barX=x(index+1)-barWidth/2,barY=Math.min(y(point.value),zero),barHeight=Math.max(1,Math.abs(zero-y(point.value)));
+    return `<rect class="equity-bar ${point.value>=0?'positive-bar':'negative-bar'}" x="${barX}" y="${barY}" width="${barWidth}" height="${barHeight}" rx="${Math.min(3,barWidth/3)}"><title>${fmtDate(trade.exit_time)} · ${usd(point.value)} cumulative</title></rect>`;
+  }).join("");
+  const dateLabels=[trades[0],trades[Math.floor((trades.length-1)/2)],trades.at(-1)];
+  el.innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Cumulative realized profit and loss bar chart">${ticks.map(v=>`<line class="chart-gridline" x1="${left}" y1="${y(v)}" x2="${width-right}" y2="${y(v)}"/><text class="chart-axis-label" x="${left-10}" y="${y(v)+4}" text-anchor="end">${Math.round(v).toLocaleString()}</text>`).join("")}<line class="chart-zero-line" x1="${left}" y1="${zero}" x2="${width-right}" y2="${zero}"/>${bars}<text class="chart-value-label" x="${width-right}" y="14" text-anchor="end">${usd(points[last].value)}</text>${dateLabels.map((t,i)=>`<text class="chart-axis-label" x="${i===0?left:i===1?(left+width-right)/2:width-right}" y="${height-5}" text-anchor="${i===0?"start":i===1?"middle":"end"}">${fmtDate(t.exit_time).split(",")[0]}</text>`).join("")}</svg>`;
   const sparkW=260,sparkH=62,sy=v=>sparkH-5-(v-min)/(span)* (sparkH-10),sx=i=>i*(sparkW/(points.length-1||1));
   const sparkCoords=points.map((p,i)=>`${sx(i)},${sy(p.value)}`).join(" ");
   $("#spark").innerHTML=`<svg viewBox="0 0 ${sparkW} ${sparkH}" preserveAspectRatio="none" role="img" aria-label="Cumulative P and L sparkline"><defs><linearGradient id="spark-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#13d6a0" stop-opacity=".34"/><stop offset="1" stop-color="#13d6a0" stop-opacity="0"/></linearGradient></defs><polygon points="0,${sparkH} ${sparkCoords} ${sparkW},${sparkH}" fill="url(#spark-fill)"/><polyline points="${sparkCoords}" fill="none" stroke="#13d6a0" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
@@ -86,7 +92,7 @@ function applyRange(days, custom=false) {
   // Exit time is the canonical date for filtering; update summary, chart, and
   // table from this one selection so all three always show the same trades.
   filtered=allTrades.filter(t=>{const date=parseDate(t.exit_time);return (!start||date>=start)&&(!end||date<=end);}); page=1;
-  $("#hero-pnl-label").textContent=custom?"Selected Period P&L":`Last ${days} Days P&L`;
+  $("#hero-pnl-label").innerHTML=`${custom?"Selected Period P&L":`Last ${days} Days P&L`} <small class="trade-unit">1 BTC</small>`;
   const from=start?.toLocaleDateString() ?? "all dates", to=end?.toLocaleDateString() ?? "all dates";
   const coverageDays=exits.length?(Math.max(...exits)-Math.min(...exits))/86400000:0;
   $("#range-label").textContent=`${from} – ${to}${!custom&&coverageDays<days-1?` · Available history covers ${Math.max(1,Math.ceil(coverageDays))} days`:""}`;
